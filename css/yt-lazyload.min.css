@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBBI Historical Chart</title>
+    <link rel="stylesheet" href="https://code.highcharts.com/css/highcharts.css">
+</head>
+<body>
+    <div id="chart-container">
+        <div id="chart" style="height: 600px; width: 100%;"></div>
+    </div>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations-advanced.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+    <script>
+        // Fetch CBBI data
+        fetch('https://colintalkscrypto.com/cbbi/data/latest.json', {
+            referrerPolicy: 'no-referrer',
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(response.status);
+            return response.json();
+        })
+        .then(json => {
+            initChart(json); // Initialize the chart with the fetched data
+        })
+        .catch(error => {
+            console.error("Error loading data:", error);
+        });
+
+        // Initialize the chart
+        function initChart(data) {
+            Highcharts.stockChart('chart', {
+                chart: {
+                    marginRight: 80, // Space for Bitcoin Price scale
+                    marginLeft: 80,  // Space for CBBI Confidence scale
+                },
+                title: {
+                    text: 'CBBI Historical Chart',
+                },
+                xAxis: {
+                    type: 'datetime',
+                },
+                yAxis: [
+                    {
+                        title: { text: 'Bitcoin Price' },
+                        type: 'logarithmic',
+                        opposite: true,
+                    },
+                    {
+                        title: { text: 'CBBI Confidence' },
+                        max: 100,
+                        min: 0,
+                        opposite: false,
+                    },
+                ],
+                series: [
+                    {
+                        name: 'Bitcoin Price',
+                        data: transformData(data.Price), // Transform and pass Bitcoin Price data
+                        yAxis: 0,
+                        color: '#ff6600', // Orange for Bitcoin Price
+                    },
+                    {
+                        type: 'areaspline',
+                        name: 'CBBI Confidence',
+                        data: transformData(data.Confidence), // Transform and pass CBBI Confidence data
+                        yAxis: 1,
+                        fillColor: {
+                            linearGradient: {
+                                x1: 0,
+                                y1: 0,
+                                x2: 0,
+                                y2: 1,
+                            },
+                            stops: [
+                                [0, '#2f4c6c36'], // Gradient start
+                                [1, '#2f4c6c00'], // Gradient end
+                            ],
+                        },
+                        color: '#2f4c6c', // Line color
+                        lineWidth: 1,
+                        marker: {
+                            radius: 3, // Larger markers for better visibility
+                        },
+                        tooltip: {
+                            valueDecimals: 0,
+                        },
+                        states: {
+                            hover: {
+                                lineWidthPlus: 0,
+                            },
+                        },
+                    },
+                ],
+            });
+        }
+
+        // Transform JSON data into Highcharts format
+        function transformData(dataObj) {
+            return Object.entries(dataObj).map(([timestamp, value]) => [parseInt(timestamp) * 1000, value]);
+        }
+    </script>
+</body>
+</html>
